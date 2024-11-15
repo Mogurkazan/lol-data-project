@@ -38,3 +38,62 @@ def riot_api_test(request):
 
     # Renderizar la plantilla
     return render(request, 'riot_api_test.html', {'free_champs': free_champs})
+
+def champions_list(request):
+    # Endpoint de Data Dragon para los datos de campeones
+    ddragon_url = "https://ddragon.leagueoflegends.com/cdn/13.20.1/data/en_US/champion.json"
+    response = requests.get(ddragon_url)
+
+    if response.status_code != 200:
+        return HttpResponse("Error al obtener la lista de campeones.")
+
+    champions_data = response.json()
+    champions = [
+        {
+            'id': champ['id'],
+            'name': champ['name'],
+            'title': champ['title'],
+            'icon': f"https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{champ['id']}.png"
+        }
+        for champ in champions_data['data'].values()
+    ]
+
+    # Renderiza la lista de campeones
+    return render(request, 'champions_list.html', {'champions': champions})
+
+def champion_detail(request, champion_id):
+    # Endpoint de Data Dragon para los datos del campeón
+    ddragon_url = f"https://ddragon.leagueoflegends.com/cdn/13.20.1/data/en_US/champion/{champion_id}.json"
+    items_url = "https://ddragon.leagueoflegends.com/cdn/13.20.1/data/en_US/item.json"
+
+    champion_response = requests.get(ddragon_url)
+    items_response = requests.get(items_url)
+
+    if champion_response.status_code != 200 or items_response.status_code != 200:
+        return HttpResponse("Error al obtener los datos del campeón u objetos.")
+
+    champion_data = champion_response.json()
+    items_data = items_response.json()
+
+    # Filtrar botas
+    boots = {key: value for key, value in items_data['data'].items() if 'Boots' in value.get('tags', [])}
+    items = items_data['data']
+
+    # Generar listas
+    levels = list(range(1, 19))
+    main_items_slots = list(range(4))  # 4 casillas de objetos principales
+    partial_items_slots = list(range(4))  # 4 casillas de objetos parciales
+
+    champion = champion_data['data'][champion_id]
+
+    # Renderizar plantilla con datos
+    return render(request, 'champion_detail.html', {
+        'champion': champion,
+        'levels': levels,
+        'boots': boots,
+        'items': items,
+        'main_items_slots': main_items_slots,
+        'partial_items_slots': partial_items_slots,
+    })
+
+

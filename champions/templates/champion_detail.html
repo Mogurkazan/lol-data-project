@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ champion.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: #ffcc00;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #444;
+            border-radius: 10px;
+            background-color: #2a2a2a;
+        }
+
+        .abilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 20px;
+            justify-items: center;
+        }
+
+        .ability-icon {
+            position: relative;
+            width: 64px;
+            height: 64px;
+        }
+
+        .ability-icon img {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .ability-icon img:hover {
+            transform: scale(1.1);
+        }
+
+        .tooltip {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .ability-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .stats {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 16px;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .items-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .selected-icon {
+            display: block;
+            margin: 5px auto;
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ champion.name }} - {{ champion.title }}</h1>
+        <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{{ champion.id }}.png" alt="{{ champion.name }}">
+
+        <!-- Habilidades -->
+        <div class="section">
+            <h2>Habilidades</h2>
+            <div class="abilities">
+                <!-- Habilidad Pasiva -->
+                <div class="ability-icon">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/passive/{{ champion.passive.image.full }}" alt="{{ champion.passive.name }}">
+                    <div class="tooltip">
+                        <strong>{{ champion.passive.name }}</strong>
+                        <p>{{ champion.passive.description }}</p>
+                    </div>
+                </div>
+                <!-- Habilidades activas -->
+                {% for ability in champion.spells %}
+                <div class="ability-icon">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/spell/{{ ability.image.full }}" alt="{{ ability.name }}">
+                    <div class="tooltip">
+                        <strong>{{ ability.name }}</strong>
+                        <p>{{ ability.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="section">
+            <h2>Estadísticas Base</h2>
+            <div>
+                <label for="champion-level">Selecciona Nivel:</label>
+                <select id="champion-level" onchange="updateStats()">
+                    {% for level in levels %}
+                    <option value="{{ level }}">{{ level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="stats">
+                <p><strong>Vida:</strong> <span id="hp">{{ champion.stats.hp }}</span></p>
+                <p><strong>Maná:</strong> <span id="mp">{{ champion.stats.mp }}</span></p>
+                <p><strong>Armadura:</strong> <span id="armor">{{ champion.stats.armor }}</span></p>
+                <p><strong>Resistencia Mágica:</strong> <span id="spellblock">{{ champion.stats.spellblock }}</span></p>
+                <p><strong>Daño de Ataque:</strong> <span id="attackdamage">{{ champion.stats.attackdamage }}</span></p>
+            </div>
+        </div>
+
+        <!-- Objetos -->
+        <div class="section">
+            <h2>Objetos</h2>
+            <div class="items-selection">
+                <div>
+                    <h3>Botas</h3>
+                    <select id="boots" onchange="updateStats()">
+                        <option value="">Selecciona botas</option>
+                        {% for id, item in boots.items %}
+                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
+                            {{ item.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <h3>Objetos Principales</h3>
+                    {% for slot in main_items_slots %}
+                    <select class="main-item" onchange="updateStats()">
+                        <option value="">Selecciona un objeto principal</option>
+                        {% for id, item in items.items %}
+                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
+                            {{ item.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% endfor %}
+                </div>
+
+                <div>
+                    <h3>Objetos Parciales</h3>
+                    {% for slot in partial_items_slots %}
+                    <select class="partial-item" onchange="updateStats()">
+                        <option value="">Selecciona un objeto parcial</option>
+                        {% for id, item in items.items %}
+                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
+                            {{ item.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base stats del campeón obtenidas desde el servidor
+        const baseStats = {
+            hp: {{ champion.stats.hp }},
+            hpPerLevel: {{ champion.stats.hpperlevel }},
+            mp: {{ champion.stats.mp }},
+            mpPerLevel: {{ champion.stats.mpperlevel }},
+            armor: {{ champion.stats.armor }},
+            armorPerLevel: {{ champion.stats.armorperlevel }},
+            spellblock: {{ champion.stats.spellblock }},
+            spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
+            attackdamage: {{ champion.stats.attackdamage }},
+            attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
+        };
+    
+        // Datos de los objetos
+        const itemsData = {{ items|safe }};
+    
+        // Función para obtener estadísticas de un objeto
+        function getItemStats(itemId) {
+            if (!itemId || !itemsData[itemId]) return {};
+            return itemsData[itemId].stats || {};
+        }
+    
+        // Función para actualizar las estadísticas del campeón
+        function updateStats() {
+            const level = parseInt(document.getElementById("champion-level").value);
+    
+            // Estadísticas base recalculadas según el nivel
+            let updatedStats = {
+                hp: baseStats.hp + baseStats.hpPerLevel * (level - 1),
+                mp: baseStats.mp + baseStats.mpPerLevel * (level - 1),
+                armor: baseStats.armor + baseStats.armorPerLevel * (level - 1),
+                spellblock: baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1),
+                attackdamage: baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1),
+            };
+    
+            // Añadir estadísticas de los objetos seleccionados
+            const selectedItems = [
+                document.getElementById("boots").value,
+                ...Array.from(document.querySelectorAll(".main-item")).map(select => select.value),
+                ...Array.from(document.querySelectorAll(".partial-item")).map(select => select.value),
+            ];
+    
+            selectedItems.forEach(itemId => {
+                const stats = getItemStats(itemId);
+                for (const stat in stats) {
+                    updatedStats[stat] = (updatedStats[stat] || 0) + stats[stat];
+                }
+            });
+    
+            // Actualizar estadísticas en la página
+            document.getElementById("hp").textContent = updatedStats.hp.toFixed(1);
+            document.getElementById("mp").textContent = updatedStats.mp.toFixed(1);
+            document.getElementById("armor").textContent = updatedStats.armor.toFixed(1);
+            document.getElementById("spellblock").textContent = updatedStats.spellblock.toFixed(1);
+            document.getElementById("attackdamage").textContent = updatedStats.attackdamage.toFixed(1);
+        }
+    
+        // Función para añadir iconos a los desplegables
+        function addIconsToDropdowns() {
+            document.querySelectorAll("select").forEach(select => {
+                select.addEventListener("change", () => {
+                    const selectedOption = select.options[select.selectedIndex];
+                    const iconUrl = selectedOption.getAttribute("data-icon");
+    
+                    if (iconUrl) {
+                        // Crear o actualizar el icono al lado del desplegable
+                        const iconContainer = select.nextElementSibling || document.createElement("img");
+                        iconContainer.src = iconUrl;
+                        iconContainer.alt = "Ícono del objeto seleccionado";
+                        iconContainer.style.width = "40px";
+                        iconContainer.style.marginTop = "5px";
+                        if (!select.nextElementSibling) select.parentElement.appendChild(iconContainer);
+                    } else if (select.nextElementSibling) {
+                        // Quitar el ícono si no hay objeto seleccionado
+                        select.nextElementSibling.remove();
+                    }
+                });
+            });
+        }
+    
+        // Inicializar los eventos al cargar la página
+        document.addEventListener("DOMContentLoaded", () => {
+            addIconsToDropdowns();
+            updateStats(); // Calcular estadísticas iniciales al cargar la página
+        });
+    </script>
+    
+    
+</body>
+</html>

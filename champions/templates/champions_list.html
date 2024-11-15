@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Campeones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+        }
+        .search-bar {
+            margin: 20px;
+        }
+        .champions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+        .champion-card {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .champion-card:hover {
+            transform: scale(1.05);
+        }
+        .champion-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Campeones</h1>
+    <input
+        type="text"
+        class="search-bar"
+        id="searchBar"
+        placeholder="Buscar campeones..."
+        onkeyup="filterChampions()"
+    />
+
+    <div class="champions-grid" id="championsGrid">
+        {% for champion in champions %}
+        <div
+            class="champion-card"
+            onclick="window.location.href='/champions/{{ champion.id }}/'"
+        >
+            <img src="{{ champion.icon }}" alt="{{ champion.name }}">
+            <h3>{{ champion.name }}</h3>
+            <p>{{ champion.title }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function filterChampions() {
+            const query = document.getElementById('searchBar').value.toLowerCase();
+            const champions = document.querySelectorAll('.champion-card');
+
+            champions.forEach(card => {
+                const name = card.querySelector('h3').innerText.toLowerCase();
+                card.style.display = name.includes(query) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
