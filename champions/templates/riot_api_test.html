@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotación Gratuita de Campeones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rotación Gratuita de Campeones</h1>
+    <ul>
+        {% for champ in free_champs %}
+            <li>
+                <img src="{{ champ.icon }}" alt="{{ champ.name }}">
+                <span>{{ champ.name }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
