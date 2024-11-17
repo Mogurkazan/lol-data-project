@@ -20,7 +20,7 @@
             padding: 20px;
         }
 
-        h1, h2, h3 {
+        h1, h2 {
             color: #ffcc00;
         }
 
@@ -33,21 +33,22 @@
         }
 
         .abilities {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            display: flex;
+            justify-content: center;
             gap: 20px;
-            justify-items: center;
+            margin-top: 20px;
         }
 
         .ability-icon {
             position: relative;
-            width: 64px;
-            height: 64px;
+            display: inline-block;
+            text-align: center;
         }
 
         .ability-icon img {
-            width: 100%;
-            height: 100%;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 5px;
             border-radius: 8px;
             transition: transform 0.2s;
         }
@@ -58,19 +59,21 @@
 
         .tooltip {
             visibility: hidden;
-            width: 200px;
             background-color: #333;
             color: #fff;
-            text-align: center;
+            text-align: left;
             padding: 10px;
             border-radius: 5px;
             position: absolute;
             bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1;
+            z-index: 10;
+            white-space: normal;
+            width: 250px;
+            font-size: 14px;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.3s;
         }
 
         .ability-icon:hover .tooltip {
@@ -79,59 +82,115 @@
         }
 
         .stats {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 16px;
+            margin: 20px 0;
             text-align: left;
-            margin-top: 10px;
+            font-size: 16px;
         }
 
-        .items-selection {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+        .stats span {
+            font-weight: bold;
+            color: #50fa7b;
         }
 
         select {
-            width: 100%;
             padding: 10px;
-            font-size: 16px;
-            margin-top: 5px;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
-        .selected-icon {
-            display: block;
-            margin: 5px auto;
-            width: 50px;
+        .slots {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .slot {
+            width: 64px;
+            height: 64px;
+            background-color: #444;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .slot img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 800px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .modal-content img {
+            width: 64px;
+            height: 64px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .modal-content img:hover {
+            transform: scale(1.1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>{{ champion.name }} - {{ champion.title }}</h1>
-        <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{{ champion.id }}.png" alt="{{ champion.name }}">
+        <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/champion/{{ champion.image.full }}" alt="{{ champion.name }}">
 
         <!-- Habilidades -->
         <div class="section">
             <h2>Habilidades</h2>
             <div class="abilities">
-                <!-- Habilidad Pasiva -->
                 <div class="ability-icon">
                     <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/passive/{{ champion.passive.image.full }}" alt="{{ champion.passive.name }}">
+                    <p>{{ champion.passive.name }}</p>
                     <div class="tooltip">
-                        <strong>{{ champion.passive.name }}</strong>
-                        <p>{{ champion.passive.description }}</p>
+                        <strong>{{ champion.passive.name }}</strong><br>
+                        {{ champion.passive.description }}
                     </div>
                 </div>
-                <!-- Habilidades activas -->
-                {% for ability in champion.spells %}
+                {% for spell in champion.spells %}
                 <div class="ability-icon">
-                    <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/spell/{{ ability.image.full }}" alt="{{ ability.name }}">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/spell/{{ spell.image.full }}" alt="{{ spell.name }}">
+                    <p>{{ spell.name }}</p>
                     <div class="tooltip">
-                        <strong>{{ ability.name }}</strong>
-                        <p>{{ ability.description }}</p>
+                        <strong>{{ spell.name }}</strong><br>
+                        {{ spell.description }}
                     </div>
                 </div>
                 {% endfor %}
@@ -140,160 +199,116 @@
 
         <!-- Estadísticas -->
         <div class="section">
-            <h2>Estadísticas Base</h2>
+            <h2>Estadísticas del Campeón</h2>
             <div>
                 <label for="champion-level">Selecciona Nivel:</label>
-                <select id="champion-level" onchange="updateStats()">
+                <select id="champion-level">
                     {% for level in levels %}
                     <option value="{{ level }}">{{ level }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="stats">
-                <p><strong>Vida:</strong> <span id="hp">{{ champion.stats.hp }}</span></p>
-                <p><strong>Maná:</strong> <span id="mp">{{ champion.stats.mp }}</span></p>
-                <p><strong>Armadura:</strong> <span id="armor">{{ champion.stats.armor }}</span></p>
-                <p><strong>Resistencia Mágica:</strong> <span id="spellblock">{{ champion.stats.spellblock }}</span></p>
-                <p><strong>Daño de Ataque:</strong> <span id="attackdamage">{{ champion.stats.attackdamage }}</span></p>
+                <p>Vida: <span id="stat-hp">{{ champion.stats.hp }}</span></p>
+                <p>Mana: <span id="stat-mp">{{ champion.stats.mp }}</span></p>
+                <p>Armadura: <span id="stat-armor">{{ champion.stats.armor }}</span></p>
+                <p>Resistencia Mágica: <span id="stat-spellblock">{{ champion.stats.spellblock }}</span></p>
+                <p>Daño de Ataque: <span id="stat-ad">{{ champion.stats.attackdamage }}</span></p>
             </div>
         </div>
 
-        <!-- Objetos -->
+        <!-- Selección de Objetos -->
         <div class="section">
-            <h2>Objetos</h2>
-            <div class="items-selection">
-                <div>
-                    <h3>Botas</h3>
-                    <select id="boots" onchange="updateStats()">
-                        <option value="">Selecciona botas</option>
-                        {% for id, item in boots.items %}
-                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
-                            {{ item.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div>
-                    <h3>Objetos Principales</h3>
-                    {% for slot in main_items_slots %}
-                    <select class="main-item" onchange="updateStats()">
-                        <option value="">Selecciona un objeto principal</option>
-                        {% for id, item in items.items %}
-                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
-                            {{ item.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    {% endfor %}
-                </div>
-
-                <div>
-                    <h3>Objetos Parciales</h3>
-                    {% for slot in partial_items_slots %}
-                    <select class="partial-item" onchange="updateStats()">
-                        <option value="">Selecciona un objeto parcial</option>
-                        {% for id, item in items.items %}
-                        <option value="{{ id }}" data-icon="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/{{ id }}.png">
-                            {{ item.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    {% endfor %}
-                </div>
+            <h2>Seleccionar Objetos</h2>
+            <div class="slots">
+                <div class="slot" data-slot="boots">+</div>
+                <div class="slot" data-slot="item1">+</div>
+                <div class="slot" data-slot="item2">+</div>
+                <div class="slot" data-slot="item3">+</div>
+                <div class="slot" data-slot="item4">+</div>
             </div>
         </div>
     </div>
 
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">×</span>
+            <div id="modal-items"></div>
+        </div>
+    </div>
+
     <script>
-        // Base stats del campeón obtenidas desde el servidor
-        const baseStats = {
-            hp: {{ champion.stats.hp }},
-            hpPerLevel: {{ champion.stats.hpperlevel }},
-            mp: {{ champion.stats.mp }},
-            mpPerLevel: {{ champion.stats.mpperlevel }},
-            armor: {{ champion.stats.armor }},
-            armorPerLevel: {{ champion.stats.armorperlevel }},
-            spellblock: {{ champion.stats.spellblock }},
-            spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
-            attackdamage: {{ champion.stats.attackdamage }},
-            attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
-        };
-    
-        // Datos de los objetos
-        const itemsData = {{ items|safe }};
-    
-        // Función para obtener estadísticas de un objeto
-        function getItemStats(itemId) {
-            if (!itemId || !itemsData[itemId]) return {};
-            return itemsData[itemId].stats || {};
-        }
-    
-        // Función para actualizar las estadísticas del campeón
-        function updateStats() {
-            const level = parseInt(document.getElementById("champion-level").value);
-    
-            // Estadísticas base recalculadas según el nivel
-            let updatedStats = {
-                hp: baseStats.hp + baseStats.hpPerLevel * (level - 1),
-                mp: baseStats.mp + baseStats.mpPerLevel * (level - 1),
-                armor: baseStats.armor + baseStats.armorPerLevel * (level - 1),
-                spellblock: baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1),
-                attackdamage: baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1),
+        document.addEventListener('DOMContentLoaded', () => {
+            const baseStats = {
+                hp: {{ champion.stats.hp }},
+                hpPerLevel: {{ champion.stats.hpperlevel }},
+                mp: {{ champion.stats.mp }},
+                mpPerLevel: {{ champion.stats.mpperlevel }},
+                armor: {{ champion.stats.armor }},
+                armorPerLevel: {{ champion.stats.armorperlevel }},
+                spellblock: {{ champion.stats.spellblock }},
+                spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
+                attackdamage: {{ champion.stats.attackdamage }},
+                attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
             };
-    
-            // Añadir estadísticas de los objetos seleccionados
-            const selectedItems = [
-                document.getElementById("boots").value,
-                ...Array.from(document.querySelectorAll(".main-item")).map(select => select.value),
-                ...Array.from(document.querySelectorAll(".partial-item")).map(select => select.value),
-            ];
-    
-            selectedItems.forEach(itemId => {
-                const stats = getItemStats(itemId);
-                for (const stat in stats) {
-                    updatedStats[stat] = (updatedStats[stat] || 0) + stats[stat];
+
+            const levelSelect = document.getElementById('champion-level');
+            const updateStats = () => {
+                const level = parseInt(levelSelect.value, 10) || 1;
+                document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
+            };
+
+            levelSelect.addEventListener('change', updateStats);
+            updateStats();
+
+            const itemsData = JSON.parse('{{ items|escapejs }}');
+            const bootsData = JSON.parse('{{ boots|escapejs }}');
+            let currentSlot = null;
+
+            function openModal(slot) {
+                currentSlot = slot;
+                const modal = document.getElementById('modal');
+                const modalItems = document.getElementById('modal-items');
+                modal.style.display = 'flex';
+                modalItems.innerHTML = '';
+
+                const data = slot === 'boots' ? bootsData : itemsData;
+                for (const [id, item] of Object.entries(data)) {
+                    const img = document.createElement('img');
+                    img.src = `https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png`;
+                    img.alt = item.name;
+                    img.title = `${item.name}\n${item.plaintext}\n${JSON.stringify(item.stats, null, 2)}`;
+                    img.addEventListener('click', () => selectItem(slot, id, item));
+                    modalItems.appendChild(img);
                 }
+            }
+
+            function closeModal() {
+                const modal = document.getElementById('modal');
+                modal.style.display = 'none';
+            }
+
+            function selectItem(slot, id, item) {
+                const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
+                slotDiv.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png" alt="${item.name}">`;
+                closeModal();
+            }
+
+            document.querySelectorAll('.slot').forEach(slot => {
+                slot.addEventListener('click', () => openModal(slot.getAttribute('data-slot')));
             });
-    
-            // Actualizar estadísticas en la página
-            document.getElementById("hp").textContent = updatedStats.hp.toFixed(1);
-            document.getElementById("mp").textContent = updatedStats.mp.toFixed(1);
-            document.getElementById("armor").textContent = updatedStats.armor.toFixed(1);
-            document.getElementById("spellblock").textContent = updatedStats.spellblock.toFixed(1);
-            document.getElementById("attackdamage").textContent = updatedStats.attackdamage.toFixed(1);
-        }
-    
-        // Función para añadir iconos a los desplegables
-        function addIconsToDropdowns() {
-            document.querySelectorAll("select").forEach(select => {
-                select.addEventListener("change", () => {
-                    const selectedOption = select.options[select.selectedIndex];
-                    const iconUrl = selectedOption.getAttribute("data-icon");
-    
-                    if (iconUrl) {
-                        // Crear o actualizar el icono al lado del desplegable
-                        const iconContainer = select.nextElementSibling || document.createElement("img");
-                        iconContainer.src = iconUrl;
-                        iconContainer.alt = "Ícono del objeto seleccionado";
-                        iconContainer.style.width = "40px";
-                        iconContainer.style.marginTop = "5px";
-                        if (!select.nextElementSibling) select.parentElement.appendChild(iconContainer);
-                    } else if (select.nextElementSibling) {
-                        // Quitar el ícono si no hay objeto seleccionado
-                        select.nextElementSibling.remove();
-                    }
-                });
+
+            document.querySelector('.close-btn').addEventListener('click', closeModal);
+            document.addEventListener('click', (e) => {
+                const modal = document.getElementById('modal');
+                if (e.target === modal) closeModal();
             });
-        }
-    
-        // Inicializar los eventos al cargar la página
-        document.addEventListener("DOMContentLoaded", () => {
-            addIconsToDropdowns();
-            updateStats(); // Calcular estadísticas iniciales al cargar la página
         });
     </script>
-    
-    
 </body>
 </html>
