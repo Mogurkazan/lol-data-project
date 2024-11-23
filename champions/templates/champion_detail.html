@@ -87,6 +87,12 @@
             font-size: 16px;
         }
 
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
         .stats span {
             font-weight: bold;
             color: #50fa7b;
@@ -124,7 +130,6 @@
             max-height: 100%;
         }
 
-        /* Tooltip para slots */
         .slot .tooltip {
             visibility: hidden;
             background-color: #333;
@@ -234,12 +239,17 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="stats">
+            <div class="stats-grid">
                 <p>Vida: <span id="stat-hp">{{ champion.stats.hp }}</span></p>
-                <p>Mana: <span id="stat-mp">{{ champion.stats.mp }}</span></p>
+                <p>Maná: <span id="stat-mp">{{ champion.stats.mp }}</span></p>
                 <p>Armadura: <span id="stat-armor">{{ champion.stats.armor }}</span></p>
                 <p>Resistencia Mágica: <span id="stat-spellblock">{{ champion.stats.spellblock }}</span></p>
                 <p>Daño de Ataque: <span id="stat-ad">{{ champion.stats.attackdamage }}</span></p>
+                <p>Velocidad de Ataque: <span id="stat-attackspeed">{{ champion.stats.attackspeed }}</span></p>
+                <p>Rango de Ataque: <span id="stat-attackrange">{{ champion.stats.attackrange }}</span></p>
+                <p>Regeneración de Vida: <span id="stat-hpregen">{{ champion.stats.hpregen }}</span></p>
+                <p>Regeneración de Maná: <span id="stat-mpregen">{{ champion.stats.mpregen }}</span></p>
+                <p>Velocidad de Movimiento: <span id="stat-movespeed">{{ champion.stats.movespeed }}</span></p>
             </div>
         </div>
 
@@ -281,110 +291,101 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-    // Estadísticas base del campeón
-    const baseStats = {
-        hp: {{ champion.stats.hp }},
-        hpPerLevel: {{ champion.stats.hpperlevel }},
-        mp: {{ champion.stats.mp }},
-        mpPerLevel: {{ champion.stats.mpperlevel }},
-        armor: {{ champion.stats.armor }},
-        armorPerLevel: {{ champion.stats.armorperlevel }},
-        spellblock: {{ champion.stats.spellblock }},
-        spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
-        attackdamage: {{ champion.stats.attackdamage }},
-        attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
-    };
-
-    const levelSelect = document.getElementById('champion-level');
-
-    // Actualizar estadísticas según el nivel seleccionado
-    const updateStats = () => {
-        const level = parseInt(levelSelect.value, 10) || 1;
-        document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
-        document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
-        document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
-        document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
-        document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
-
-        console.log(`Estadísticas actualizadas para nivel ${level}`);
-    };
-
-    levelSelect.addEventListener('change', updateStats);
-    updateStats(); // Llamar para inicializar las estadísticas al cargar la página
-
-    // Datos de la API
-    const itemsData = JSON.parse('{{ items|escapejs }}');
-    const bootsData = JSON.parse('{{ boots|escapejs }}');
-    let currentSlot = null;
-
-    // Abrir modal de selección de objetos
-    function openModal(slot) {
-        currentSlot = slot;
-        const modal = document.getElementById('modal');
-        const modalItems = document.getElementById('modal-items');
-        modal.style.display = 'flex';
-        modalItems.innerHTML = '';
-
-        const data = slot === 'boots' ? bootsData : itemsData;
-
-        for (const [id, item] of Object.entries(data)) {
-            const img = document.createElement('img');
-            img.src = `https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png`;
-            img.alt = item.name || 'Item desconocido';
-            img.title = `${item.name}\n${item.plaintext || 'Sin descripción'}\n${JSON.stringify(item.stats || {}, null, 2)}`;
-
-            img.addEventListener('click', () => selectItem(slot, id, item)); // Pasar el objeto completo
-            modalItems.appendChild(img);
-        }
-    }
-
-    // Cerrar el modal
-    function closeModal() {
-        const modal = document.getElementById('modal');
-        modal.style.display = 'none';
-    }
-
-    // Seleccionar un objeto y actualizar el slot
-    function selectItem(slot, id, item) {
-        console.log(`Seleccionando item para slot: ${slot}`, item);
-
-        const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
-
-        if (!slotDiv) {
-            console.error(`Slot no encontrado para: ${slot}`);
-            return;
-        }
-
-        slotDiv.innerHTML = `
-            <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png" alt="${item.name}">
-            <div class="tooltip">
-                <strong>${item.name}</strong><br>
-                ${item.plaintext || 'Sin descripción'}<br>
-                ${Object.entries(item.stats || {})
-                    .map(([stat, value]) => `${stat}: ${value}`)
-                    .join('<br>')}
-            </div>
-        `;
-
-        console.log(`Slot actualizado: ${slot}`, slotDiv.innerHTML);
-        closeModal();
-    }
-
-    // Event listeners
-    document.querySelectorAll('.slot').forEach(slot => {
-        slot.addEventListener('click', () => openModal(slot.getAttribute('data-slot')));
-    });
-
-    document.querySelector('.close-btn').addEventListener('click', closeModal);
-
-    document.addEventListener('click', (e) => {
-        const modal = document.getElementById('modal');
-        if (e.target === modal) closeModal();
-    });
-});
-
-
-
+            const baseStats = {
+                hp: {{ champion.stats.hp }},
+                hpPerLevel: {{ champion.stats.hpperlevel }},
+                mp: {{ champion.stats.mp }},
+                mpPerLevel: {{ champion.stats.mpperlevel }},
+                armor: {{ champion.stats.armor }},
+                armorPerLevel: {{ champion.stats.armorperlevel }},
+                spellblock: {{ champion.stats.spellblock }},
+                spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
+                attackdamage: {{ champion.stats.attackdamage }},
+                attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
+                attackspeed: {{ champion.stats.attackspeed }},
+                attackspeedPerLevel: {{ champion.stats.attackspeedperlevel }},
+                attackrange: {{ champion.stats.attackrange }},
+                hpregen: {{ champion.stats.hpregen }},
+                hpregenPerLevel: {{ champion.stats.hpregenperlevel }},
+                mpregen: {{ champion.stats.mpregen }},
+                mpregenPerLevel: {{ champion.stats.mpregenperlevel }},
+                movespeed: {{ champion.stats.movespeed }},
+            };
+    
+            const levelSelect = document.getElementById('champion-level');
+            const updateStats = () => {
+                const level = parseInt(levelSelect.value, 10) || 1;
+    
+                document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-attackspeed').textContent = (baseStats.attackspeed + baseStats.attackspeedPerLevel * (level - 1)).toFixed(3);
+                document.getElementById('stat-attackrange').textContent = baseStats.attackrange;
+                document.getElementById('stat-hpregen').textContent = (baseStats.hpregen + baseStats.hpregenPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-mpregen').textContent = (baseStats.mpregen + baseStats.mpregenPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-movespeed').textContent = baseStats.movespeed;
+            };
+    
+            levelSelect.addEventListener('change', updateStats);
+            updateStats(); // Inicializa las estadísticas al cargar la página.
+    
+            // Funcionalidad de los modales (sin cambios)
+            const itemsData = JSON.parse('{{ items|escapejs }}');
+            const bootsData = JSON.parse('{{ boots|escapejs }}');
+            let currentSlot = null;
+    
+            function openModal(slot) {
+                currentSlot = slot;
+                const modal = document.getElementById('modal');
+                const modalItems = document.getElementById('modal-items');
+                modal.style.display = 'flex';
+                modalItems.innerHTML = '';
+    
+                const data = slot === 'boots' ? bootsData : itemsData;
+    
+                for (const [id, item] of Object.entries(data)) {
+                    const img = document.createElement('img');
+                    img.src = `https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png`;
+                    img.alt = item.name || 'Item desconocido';
+                    img.title = `${item.name}\n${item.plaintext || 'Sin descripción'}\n${JSON.stringify(item.stats || {}, null, 2)}`;
+    
+                    img.addEventListener('click', () => selectItem(slot, id, item)); // Pasar el objeto completo
+                    modalItems.appendChild(img);
+                }
+            }
+    
+            function closeModal() {
+                const modal = document.getElementById('modal');
+                modal.style.display = 'none';
+            }
+    
+            function selectItem(slot, id, item) {
+                const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
+                if (!slotDiv) return;
+    
+                slotDiv.innerHTML = `
+                    <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png" alt="${item.name}">
+                    <div class="tooltip">
+                        <strong>${item.name}</strong><br>
+                        ${item.plaintext || 'Sin descripción'}<br>
+                        ${Object.entries(item.stats || {}).map(([stat, value]) => `${stat}: ${value}`).join('<br>')}
+                    </div>
+                `;
+                closeModal();
+            }
+    
+            document.querySelectorAll('.slot').forEach(slot => {
+                slot.addEventListener('click', () => openModal(slot.getAttribute('data-slot')));
+            });
+    
+            document.querySelector('.close-btn').addEventListener('click', closeModal);
+            document.addEventListener('click', (e) => {
+                const modal = document.getElementById('modal');
+                if (e.target === modal) closeModal();
+            });
+        });
     </script>
     
 </body>
