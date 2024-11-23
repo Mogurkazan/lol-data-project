@@ -312,30 +312,61 @@
                 movespeed: {{ champion.stats.movespeed }},
             };
     
+            // Almacenar los objetos seleccionados
+            const selectedItems = {
+                boots: null,
+                item1: null,
+                item2: null,
+                item3: null,
+                item4: null,
+            };
+    
             const levelSelect = document.getElementById('champion-level');
+    
+            // Función para actualizar estadísticas con objetos y nivel
             const updateStats = () => {
                 const level = parseInt(levelSelect.value, 10) || 1;
+                let modifiedStats = { ...baseStats };
     
-                document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-attackspeed').textContent = (baseStats.attackspeed + baseStats.attackspeedPerLevel * (level - 1)).toFixed(3);
-                document.getElementById('stat-attackrange').textContent = baseStats.attackrange;
-                document.getElementById('stat-hpregen').textContent = (baseStats.hpregen + baseStats.hpregenPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-mpregen').textContent = (baseStats.mpregen + baseStats.mpregenPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-movespeed').textContent = baseStats.movespeed;
+                // Aplicar las modificaciones de los objetos seleccionados
+                for (const slot in selectedItems) {
+                    const item = selectedItems[slot];
+                    if (item && item.stats) {
+                        for (const [stat, value] of Object.entries(item.stats)) {
+                            if (stat === 'FlatHPPoolMod') modifiedStats.hp += value;
+                            if (stat === 'FlatMPPoolMod') modifiedStats.mp += value;
+                            if (stat === 'FlatArmorMod') modifiedStats.armor += value;
+                            if (stat === 'FlatSpellBlockMod') modifiedStats.spellblock += value;
+                            if (stat === 'FlatPhysicalDamageMod') modifiedStats.attackdamage += value;
+                            if (stat === 'PercentAttackSpeedMod') modifiedStats.attackspeed *= (1 + value);
+                            if (stat === 'FlatHPRegenMod') modifiedStats.hpregen += value;
+                            if (stat === 'FlatMPRegenMod') modifiedStats.mpregen += value;
+                            if (stat === 'FlatMovementSpeedMod') modifiedStats.movespeed += value;
+                        }
+                    }
+                }
+    
+                // Actualizar los valores mostrados en pantalla
+                document.getElementById('stat-hp').textContent = (modifiedStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-mp').textContent = (modifiedStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-armor').textContent = (modifiedStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-spellblock').textContent = (modifiedStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-ad').textContent = (modifiedStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-attackspeed').textContent = (modifiedStats.attackspeed + baseStats.attackspeedPerLevel * (level - 1)).toFixed(3);
+                document.getElementById('stat-attackrange').textContent = modifiedStats.attackrange;
+                document.getElementById('stat-hpregen').textContent = (modifiedStats.hpregen + baseStats.hpregenPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-mpregen').textContent = (modifiedStats.mpregen + baseStats.mpregenPerLevel * (level - 1)).toFixed(1);
+                document.getElementById('stat-movespeed').textContent = modifiedStats.movespeed.toFixed(1);
             };
     
             levelSelect.addEventListener('change', updateStats);
             updateStats(); // Inicializa las estadísticas al cargar la página.
     
-            // Funcionalidad de los modales (sin cambios)
             const itemsData = JSON.parse('{{ items|escapejs }}');
             const bootsData = JSON.parse('{{ boots|escapejs }}');
             let currentSlot = null;
     
+            // Función para abrir el modal
             function openModal(slot) {
                 currentSlot = slot;
                 const modal = document.getElementById('modal');
@@ -356,11 +387,13 @@
                 }
             }
     
+            // Función para cerrar el modal
             function closeModal() {
                 const modal = document.getElementById('modal');
                 modal.style.display = 'none';
             }
     
+            // Función para seleccionar un objeto
             function selectItem(slot, id, item) {
                 const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
                 if (!slotDiv) return;
@@ -373,7 +406,10 @@
                         ${Object.entries(item.stats || {}).map(([stat, value]) => `${stat}: ${value}`).join('<br>')}
                     </div>
                 `;
+    
+                selectedItems[slot] = item; // Guardar el objeto seleccionado
                 closeModal();
+                updateStats(); // Actualizar estadísticas tras seleccionar un objeto
             }
     
             document.querySelectorAll('.slot').forEach(slot => {
@@ -387,6 +423,7 @@
             });
         });
     </script>
+    
     
 </body>
 </html>
