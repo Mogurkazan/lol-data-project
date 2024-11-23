@@ -116,11 +116,37 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
+            position: relative;
         }
 
         .slot img {
             max-width: 100%;
             max-height: 100%;
+        }
+
+        /* Tooltip para slots */
+        .slot .tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            white-space: normal;
+            width: 200px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .slot:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
         }
 
         .modal {
@@ -221,11 +247,26 @@
         <div class="section">
             <h2>Seleccionar Objetos</h2>
             <div class="slots">
-                <div class="slot" data-slot="boots">+</div>
-                <div class="slot" data-slot="item1">+</div>
-                <div class="slot" data-slot="item2">+</div>
-                <div class="slot" data-slot="item3">+</div>
-                <div class="slot" data-slot="item4">+</div>
+                <div class="slot" data-slot="boots">
+                    +
+                    <div class="tooltip"></div>
+                </div>
+                <div class="slot" data-slot="item1">
+                    +
+                    <div class="tooltip"></div>
+                </div>
+                <div class="slot" data-slot="item2">
+                    +
+                    <div class="tooltip"></div>
+                </div>
+                <div class="slot" data-slot="item3">
+                    +
+                    <div class="tooltip"></div>
+                </div>
+                <div class="slot" data-slot="item4">
+                    +
+                    <div class="tooltip"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -240,75 +281,111 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const baseStats = {
-                hp: {{ champion.stats.hp }},
-                hpPerLevel: {{ champion.stats.hpperlevel }},
-                mp: {{ champion.stats.mp }},
-                mpPerLevel: {{ champion.stats.mpperlevel }},
-                armor: {{ champion.stats.armor }},
-                armorPerLevel: {{ champion.stats.armorperlevel }},
-                spellblock: {{ champion.stats.spellblock }},
-                spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
-                attackdamage: {{ champion.stats.attackdamage }},
-                attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
-            };
+    // Estadísticas base del campeón
+    const baseStats = {
+        hp: {{ champion.stats.hp }},
+        hpPerLevel: {{ champion.stats.hpperlevel }},
+        mp: {{ champion.stats.mp }},
+        mpPerLevel: {{ champion.stats.mpperlevel }},
+        armor: {{ champion.stats.armor }},
+        armorPerLevel: {{ champion.stats.armorperlevel }},
+        spellblock: {{ champion.stats.spellblock }},
+        spellblockPerLevel: {{ champion.stats.spellblockperlevel }},
+        attackdamage: {{ champion.stats.attackdamage }},
+        attackdamagePerLevel: {{ champion.stats.attackdamageperlevel }},
+    };
 
-            const levelSelect = document.getElementById('champion-level');
-            const updateStats = () => {
-                const level = parseInt(levelSelect.value, 10) || 1;
-                document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
-                document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
-            };
+    const levelSelect = document.getElementById('champion-level');
 
-            levelSelect.addEventListener('change', updateStats);
-            updateStats();
+    // Actualizar estadísticas según el nivel seleccionado
+    const updateStats = () => {
+        const level = parseInt(levelSelect.value, 10) || 1;
+        document.getElementById('stat-hp').textContent = (baseStats.hp + baseStats.hpPerLevel * (level - 1)).toFixed(1);
+        document.getElementById('stat-mp').textContent = (baseStats.mp + baseStats.mpPerLevel * (level - 1)).toFixed(1);
+        document.getElementById('stat-armor').textContent = (baseStats.armor + baseStats.armorPerLevel * (level - 1)).toFixed(1);
+        document.getElementById('stat-spellblock').textContent = (baseStats.spellblock + baseStats.spellblockPerLevel * (level - 1)).toFixed(1);
+        document.getElementById('stat-ad').textContent = (baseStats.attackdamage + baseStats.attackdamagePerLevel * (level - 1)).toFixed(1);
 
-            const itemsData = JSON.parse('{{ items|escapejs }}');
-            const bootsData = JSON.parse('{{ boots|escapejs }}');
-            let currentSlot = null;
+        console.log(`Estadísticas actualizadas para nivel ${level}`);
+    };
 
-            function openModal(slot) {
-                currentSlot = slot;
-                const modal = document.getElementById('modal');
-                const modalItems = document.getElementById('modal-items');
-                modal.style.display = 'flex';
-                modalItems.innerHTML = '';
+    levelSelect.addEventListener('change', updateStats);
+    updateStats(); // Llamar para inicializar las estadísticas al cargar la página
 
-                const data = slot === 'boots' ? bootsData : itemsData;
-                for (const [id, item] of Object.entries(data)) {
-                    const img = document.createElement('img');
-                    img.src = `https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png`;
-                    img.alt = item.name;
-                    img.title = `${item.name}\n${item.plaintext}\n${JSON.stringify(item.stats, null, 2)}`;
-                    img.addEventListener('click', () => selectItem(slot, id, item));
-                    modalItems.appendChild(img);
-                }
-            }
+    // Datos de la API
+    const itemsData = JSON.parse('{{ items|escapejs }}');
+    const bootsData = JSON.parse('{{ boots|escapejs }}');
+    let currentSlot = null;
 
-            function closeModal() {
-                const modal = document.getElementById('modal');
-                modal.style.display = 'none';
-            }
+    // Abrir modal de selección de objetos
+    function openModal(slot) {
+        currentSlot = slot;
+        const modal = document.getElementById('modal');
+        const modalItems = document.getElementById('modal-items');
+        modal.style.display = 'flex';
+        modalItems.innerHTML = '';
 
-            function selectItem(slot, id, item) {
-                const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
-                slotDiv.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png" alt="${item.name}">`;
-                closeModal();
-            }
+        const data = slot === 'boots' ? bootsData : itemsData;
 
-            document.querySelectorAll('.slot').forEach(slot => {
-                slot.addEventListener('click', () => openModal(slot.getAttribute('data-slot')));
-            });
+        for (const [id, item] of Object.entries(data)) {
+            const img = document.createElement('img');
+            img.src = `https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png`;
+            img.alt = item.name || 'Item desconocido';
+            img.title = `${item.name}\n${item.plaintext || 'Sin descripción'}\n${JSON.stringify(item.stats || {}, null, 2)}`;
 
-            document.querySelector('.close-btn').addEventListener('click', closeModal);
-            document.addEventListener('click', (e) => {
-                const modal = document.getElementById('modal');
-                if (e.target === modal) closeModal();
-            });
-        });
+            img.addEventListener('click', () => selectItem(slot, id, item)); // Pasar el objeto completo
+            modalItems.appendChild(img);
+        }
+    }
+
+    // Cerrar el modal
+    function closeModal() {
+        const modal = document.getElementById('modal');
+        modal.style.display = 'none';
+    }
+
+    // Seleccionar un objeto y actualizar el slot
+    function selectItem(slot, id, item) {
+        console.log(`Seleccionando item para slot: ${slot}`, item);
+
+        const slotDiv = document.querySelector(`.slot[data-slot="${slot}"]`);
+
+        if (!slotDiv) {
+            console.error(`Slot no encontrado para: ${slot}`);
+            return;
+        }
+
+        slotDiv.innerHTML = `
+            <img src="https://ddragon.leagueoflegends.com/cdn/13.20.1/img/item/${id}.png" alt="${item.name}">
+            <div class="tooltip">
+                <strong>${item.name}</strong><br>
+                ${item.plaintext || 'Sin descripción'}<br>
+                ${Object.entries(item.stats || {})
+                    .map(([stat, value]) => `${stat}: ${value}`)
+                    .join('<br>')}
+            </div>
+        `;
+
+        console.log(`Slot actualizado: ${slot}`, slotDiv.innerHTML);
+        closeModal();
+    }
+
+    // Event listeners
+    document.querySelectorAll('.slot').forEach(slot => {
+        slot.addEventListener('click', () => openModal(slot.getAttribute('data-slot')));
+    });
+
+    document.querySelector('.close-btn').addEventListener('click', closeModal);
+
+    document.addEventListener('click', (e) => {
+        const modal = document.getElementById('modal');
+        if (e.target === modal) closeModal();
+    });
+});
+
+
+
     </script>
+    
 </body>
 </html>
